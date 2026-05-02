@@ -1,0 +1,41 @@
+appId: com.kemalai.freecrawl
+productName: FreeCrawl SEO Tool
+electronVersion: 41.2.2
+publish:
+  provider: github
+  owner: kemalai
+  repo: FreeCrawl-SEO-Tool
+  releaseType: release
+directories:
+  buildResources: resources
+  output: release
+files:
+  - out/**/*
+  - package.json
+  - "!**/*.map"
+  - "!**/*.ts"
+asar: true
+asarUnpack:
+  - "**/*.node"
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+mac:
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+  category: public.app-category.developer-tools
+linux:
+  target:
+    - AppImage
+    - deb
+  category: Development
