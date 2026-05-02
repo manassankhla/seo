@@ -2,8 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import { join } from 'path';
 import { Crawler } from '@freecrawl/core';
 import { ProjectDb } from '@freecrawl/db';
+import type { CrawlProgress, CrawlSummary } from '@freecrawl/shared-types';
 
 const app = express();
 app.use(cors());
@@ -95,7 +97,7 @@ app.post('/api/rpc/:method', async (req, res) => {
       case 'reportsWordCountPerDirectory': result = db.wordCountPerDirectory({ depth: input.depth ?? 1, limit: input.limit ?? 500 }); break;
       case 'reportsSitemapOrphans': result = db.sitemapOrphans(input.limit ?? 1000); break;
       case 'reportsServerHeaders': result = db.serverHeaderBreakdown(); break;
-      case 'graphSnapshot': result = db.getGraphSnapshot(input.nodeLimit ?? 1000); break;
+      case 'graphSnapshot': result = db.graphSnapshot(input.nodeLimit ?? 1000); break;
       case 'topAnchorTexts': result = db.topAnchorTexts(input.limit ?? 1000); break;
       default:
         res.status(404).json({ error: `Method ${method} not implemented` });
@@ -119,46 +121,28 @@ app.post('/api/crawl/start', async (req, res) => {
   db.reset();
 
   activeCrawler = new Crawler(config, db, {
-    parseHtml: async (html, url, opts) => {
+    parseHtml: async (html: string, url: string, opts: any) => {
       // In web server, use inline parser or worker thread if available
       const { parseHtml } = await import('@freecrawl/core');
       return parseHtml(html, url, opts);
     },
-    onProgress: (p) => io.emit('crawl:progress', p),
-    onLog: (entry) => io.emit('logs:batch', [entry]),
-    onDone: (summary) => io.emit('crawl:done', summary),
-    onError: (message) => io.emit('crawl:error', message),
-    writeUrl: async (payload) => {
-      // Write fetched url to sqlite
-      const result = await db.writeFetchedUrl(payload);
+    writeFetchedUrl: async (payload: any) => {
+      const result = db.writeFetchedUrl(payload);
       io.emit('data:changed');
       return result;
     },
-    flushUrlBatchSync: (batch) => {
-       batch.forEach(p => db.writeFetchedUrlSync(p));
-       io.emit('data:changed');
-    },
-    writeLinks: (links) => db.writeLinks(links),
-    writeImages: (images) => db.writeImages(images),
-    writeImageUsages: (usages) => db.writeImageUsages(usages),
-    enqueueBatch: (urls) => db.enqueueUrls(urls),
-    dequeueBatch: (limit) => db.dequeueUrls(limit),
-    writeUrlIssue: (issue) => db.writeUrlIssue(issue),
-    writeUrlSource: (source) => db.writeUrlSource(source),
-    readUrlSource: (id) => db.getUrlSource(id),
-    writeHeaders: (headers) => db.writeHeaders(headers),
-    onDnsResult: (host, type, result, err) => {
-       emitLog(err ? 'warn' : 'debug', 'crawler', `DNS ${type} ${host} -> ${err ? err : result}`);
-    },
-    getMemoryUsage: () => process.memoryUsage().heapUsed,
-    readHostCertInfo: (host) => db.getHostCert(host),
-    writeHostCertInfo: (info) => db.writeHostCert(info)
   });
 
-  activeCrawler.on('error', (err) => {
-    console.error("Crawler emitted error:", err);
-    emitLog('error', 'crawler', String(err));
+  activeCrawler.on('progress', (p: CrawlProgress) => io.emit('crawl:progress', p));
+  activeCrawler.on('done', (summary: CrawlSummary) => io.emit('crawl:done', summary));
+  activeCrawler.on('error', (msg: string) => {
+    console.error('Crawler emitted error:', msg);
+    emitLog('error', 'crawler', msg);
+    io.emit('crawl:error', msg);
   });
+  activeCrawler.on('warn', (msg: string) => emitLog('warn', 'crawler', msg));
+  activeCrawler.on('info', (msg: string) => emitLog('info', 'crawler', msg));
+  activeCrawler.on('debug', (msg: string) => emitLog('debug', 'crawler', msg));
 
   activeCrawler.start().catch(e => {
     console.error("Crawl error", e);
