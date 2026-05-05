@@ -11,7 +11,8 @@ import type {
   DiscoveredLink,
   Indexability,
 } from '@freecrawl/shared-types';
-import { type ProjectDb, EXPENSIVE_ISSUE_DEFINITIONS } from '@freecrawl/db';
+import { EXPENSIVE_ISSUE_DEFINITIONS } from '@freecrawl/shared-types';
+import { type ProjectDb } from '@freecrawl/db';
 import {
   normalizeUrl,
   isSameHost,

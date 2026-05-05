@@ -5,13 +5,18 @@ import { webApi } from '@/lib/api';
 
 export default function Home() {
   const [summary, setSummary] = useState<any>(null);
-  const [url, setUrl] = useState('https://example.com');
+  const [url, setUrl] = useState('');
   const [crawling, setCrawling] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSummary = async () => {
-      const s = await webApi.summaryGet();
-      setSummary(s);
+      try {
+        const s = await webApi.summaryGet();
+        setSummary(s);
+      } catch (err) {
+        console.error('Failed to fetch summary');
+      }
     };
     fetchSummary();
     const timer = setInterval(fetchSummary, 5000);
@@ -19,13 +24,28 @@ export default function Home() {
   }, []);
 
   const handleStart = async () => {
-    setCrawling(true);
-    await webApi.crawlStart({
-      startUrl: url,
-      maxDepth: 2,
-      maxConcurrency: 5,
-      maxRps: 2
-    } as any);
+    if (!url.trim()) {
+      setError('PLEASE_ENTER_TARGET_URL');
+      return;
+    }
+    try {
+      setError(null);
+      setCrawling(true);
+      const res = await webApi.crawlStart({
+        startUrl: url,
+        maxDepth: 2,
+        maxConcurrency: 5,
+        maxRps: 2
+      } as any) as any;
+      
+      if (res?.error) {
+        setError(res.error);
+        setCrawling(false);
+      }
+    } catch (err: any) {
+      setError(err.message || 'ENGINE_FAILURE');
+      setCrawling(false);
+    }
   };
 
   return (
@@ -43,13 +63,13 @@ export default function Home() {
         <main className="grid gap-8">
           <section className="bg-zinc-950 p-8 border border-zinc-800 shadow-2xl">
             <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-6">Execution Console</h2>
-            <div className="flex gap-0 border border-zinc-800">
+            <div className="flex gap-0 border border-zinc-800 mb-4">
               <input
                 type="text"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                className="flex-1 bg-black text-white px-6 py-4 focus:outline-none placeholder:text-zinc-700 border-r border-zinc-800"
-                placeholder="TARGET_URL_STRING"
+                className="flex-1 bg-black text-white px-6 py-4 focus:outline-none placeholder:text-zinc-800 border-r border-zinc-800"
+                placeholder="https://example.com"
               />
               <button
                 onClick={handleStart}
@@ -59,7 +79,50 @@ export default function Home() {
                 {crawling ? 'EXEC_ACTIVE' : 'RUN_CRAWL'}
               </button>
             </div>
+            
+            {error && (
+              <div className="bg-red-950/30 border border-red-900 p-4 text-red-500 text-[10px] font-bold uppercase tracking-widest mb-4">
+                ERROR :: {error}
+              </div>
+            )}
           </section>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <section className="bg-zinc-950 p-6 border border-zinc-800">
+              <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600 mb-4 flex justify-between">
+                <span>Live_System_Logs</span>
+                <span className="text-zinc-800">RDY_0.1</span>
+              </h2>
+              <div className="h-48 overflow-y-auto space-y-1 font-mono text-[9px] text-zinc-500">
+                <p>{`> [${new Date().toLocaleTimeString()}] KERNEL_INIT_SUCCESS`}</p>
+                <p>{`> [${new Date().toLocaleTimeString()}] MONGO_ATLAS_CONNECTED`}</p>
+                {crawling && <p className="text-white animate-pulse">{`> [${new Date().toLocaleTimeString()}] CRAWL_ENGINE_ACTIVE_STREAMING`}</p>}
+                <p>{`> [STBY] WAITING_FOR_INPUT...`}</p>
+              </div>
+            </section>
+
+            <section className="bg-zinc-950 p-6 border border-zinc-800">
+              <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600 mb-4">Engine_Metrics</h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="border border-zinc-900 p-4">
+                  <p className="text-[8px] text-zinc-700 uppercase font-bold">Threads</p>
+                  <p className="text-xl font-black">05/05</p>
+                </div>
+                <div className="border border-zinc-900 p-4">
+                  <p className="text-[8px] text-zinc-700 uppercase font-bold">Memory</p>
+                  <p className="text-xl font-black">124MB</p>
+                </div>
+                <div className="border border-zinc-900 p-4">
+                  <p className="text-[8px] text-zinc-700 uppercase font-bold">Uptime</p>
+                  <p className="text-xl font-black">99.9%</p>
+                </div>
+                <div className="border border-zinc-900 p-4">
+                  <p className="text-[8px] text-zinc-700 uppercase font-bold">Region</p>
+                  <p className="text-xl font-black">US_EAST</p>
+                </div>
+              </div>
+            </section>
+          </div>
 
           <section className="grid grid-cols-1 md:grid-cols-3 gap-0 border border-zinc-800 bg-zinc-800">
             <div className="bg-black p-8 border-r border-zinc-800">

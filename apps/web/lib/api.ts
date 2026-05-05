@@ -54,11 +54,12 @@ const localOverrides: Partial<FreeCrawlApi> = {
     return () => events.off('data:changed', cb);
   },
   crawlStart: async (config: any) => {
-    await fetch(`${API_BASE}/crawl/start`, {
+    const res = await fetch(`${API_BASE}/crawl/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(config)
     });
+    return res.json();
   }
 };
 

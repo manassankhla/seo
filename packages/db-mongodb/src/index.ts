@@ -96,6 +96,7 @@ export class ProjectDb {
     images: DiscoveredImage[];
     fromDepth: number;
   }): Promise<{ urlId: number }> {
+    if (!payload) return { urlId: 0 };
     const urlId = await this.upsertUrl(payload.upsert);
     
     if (payload.headers && payload.headers.length > 0) {
