@@ -1,10 +1,10 @@
 {
-  "name": "freecrawl-seo",
+  "name": "seo-spider",
   "version": "0.2.7",
   "private": true,
-  "description": "Open-source desktop SEO crawler â€” a free alternative to Screaming Frog",
-  "license": "MIT",
-  "author": "kemalai",
+  "description": "Advanced Website Spider & SEO Auditor — High-performance cloud-native crawler for serious SEO audits.",
+  "license": "UNLICENSED",
+  "author": "manassankhla",
   "type": "module",
   "engines": {
     "node": ">=22.0.0"

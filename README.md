@@ -1,18 +1,17 @@
 <div align="center">
 
-# FreeCrawl SEO Tool
+# SEO Spider Tool
 
-### Open-source desktop SEO crawler — a free, cross-platform alternative to Screaming Frog
+### Advanced Website Spider & SEO Auditor — High-performance cloud-native crawler for serious SEO audits.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-black?style=for-the-badge)](LICENSE)
-[![Latest Release](https://img.shields.io/github/v/release/kemalai/FreeCrawl-SEO-Tool?style=for-the-badge&color=blue)](https://github.com/kemalai/FreeCrawl-SEO-Tool/releases)
-[![Stars](https://img.shields.io/github/stars/kemalai/FreeCrawl-SEO-Tool?style=for-the-badge&color=yellow)](https://github.com/kemalai/FreeCrawl-SEO-Tool/stargazers)
-[![Last Commit](https://img.shields.io/github/last-commit/kemalai/FreeCrawl-SEO-Tool?style=for-the-badge&color=green)](https://github.com/kemalai/FreeCrawl-SEO-Tool/commits/main)
+[![Latest Release](https://img.shields.io/github/v/release/manassankhla/seo?style=for-the-badge&color=blue)](https://github.com/manassankhla/seo/releases)
+[![Stars](https://img.shields.io/github/stars/manassankhla/seo?style=for-the-badge&color=yellow)](https://github.com/manassankhla/seo/stargazers)
+[![Last Commit](https://img.shields.io/github/last-commit/manassankhla/seo?style=for-the-badge&color=green)](https://github.com/manassankhla/seo/commits/main)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?style=for-the-badge)](#-quick-start)
 
 **[🌐 Website](https://freecrawl.net/)** ·
-**[📦 Download](https://github.com/kemalai/FreeCrawl-SEO-Tool/releases)** ·
-**[🐛 Report Bug](https://github.com/kemalai/FreeCrawl-SEO-Tool/issues)** ·
+**[📦 Download](https://github.com/manassankhla/seo/releases)** ·
+**[🐛 Report Bug](https://github.com/manassankhla/seo/issues)** ·
 **[📝 Changelog](CHANGELOG.md)**
 
 <br />
@@ -330,10 +329,6 @@ graph LR
 
 <div align="center">
 
-### 📜 License
-
-**MIT** — see [LICENSE](LICENSE)
-
-<sub>Built with ❤ for SEO professionals who want a fast, free, open alternative to Screaming Frog.</sub>
+<sub>Built with ❤ by manassankhla for SEO professionals who want a fast, free, private alternative to Screaming Frog.</sub>
 
 </div>

@@ -33,9 +33,9 @@ export default function Home() {
       <div className="max-w-4xl mx-auto">
         <header className="mb-12">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
-            FreeCrawl Web
+            SEO Spider Web
           </h1>
-          <p className="text-slate-400 mt-2">Open-source SEO Crawler — Web Version</p>
+          <p className="text-slate-400 mt-2">Advanced Website Spider & SEO Auditor — Web Edition</p>
         </header>
 
         <main className="grid gap-8">

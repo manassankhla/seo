@@ -1244,7 +1244,7 @@ export const DEFAULT_CRAWL_CONFIG: CrawlConfig = {
   maxConcurrency: 20,
   maxRps: 20,
   requestTimeoutMs: 20_000,
-  userAgent: 'FreeCrawlSEO/0.1 (+https://github.com/kemalai/FreeCrawl-SEO-Tool)',
+  userAgent: 'FreeCrawlSEO/0.1 (+https://github.com/manassankhla/seo)',
   followRedirects: true,
   respectRobotsTxt: true,
   crawlExternal: false,
