@@ -24,8 +24,10 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,css,html}\"",
     "test": "npm run test --workspaces --if-present",
     "cli": "npm run start --workspace apps/cli --",
-    "build:web": "tsc -b && npm run build:web --workspace @freecrawl/desktop && npm run build --workspace @freecrawl/web-server",
-    "start:web": "npm run start --workspace @freecrawl/web-server"
+    "build:web": "tsc -b && npm run build:next",
+    "start:web": "npm run start:next",
+    "build:next": "npm run build --workspace apps/web",
+    "start:next": "npm run start --workspace apps/web"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
