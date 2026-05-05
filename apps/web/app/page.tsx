@@ -29,53 +29,58 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white p-8 font-sans">
+    <div className="min-h-screen bg-black text-white p-8 font-mono">
       <div className="max-w-4xl mx-auto">
-        <header className="mb-12">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
-            SEO Spider Web
+        <header className="mb-12 border-b border-zinc-800 pb-8">
+          <h1 className="text-5xl font-black tracking-tighter uppercase">
+            SEO Spider <span className="text-zinc-600">v0.2.7</span>
           </h1>
-          <p className="text-slate-400 mt-2">Advanced Website Spider & SEO Auditor — Web Edition</p>
+          <p className="text-zinc-500 mt-2 uppercase text-xs tracking-widest font-bold">
+            Cloud-Native Engine — High Performance SEO Auditing
+          </p>
         </header>
 
         <main className="grid gap-8">
-          <section className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
-            <h2 className="text-xl font-semibold mb-4">Start New Crawl</h2>
-            <div className="flex gap-4">
+          <section className="bg-zinc-950 p-8 border border-zinc-800 shadow-2xl">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-6">Execution Console</h2>
+            <div className="flex gap-0 border border-zinc-800">
               <input
                 type="text"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter URL to crawl..."
+                className="flex-1 bg-black text-white px-6 py-4 focus:outline-none placeholder:text-zinc-700 border-r border-zinc-800"
+                placeholder="TARGET_URL_STRING"
               />
               <button
                 onClick={handleStart}
                 disabled={crawling}
-                className="bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 px-6 py-2 rounded-lg font-medium transition-colors"
+                className="bg-white text-black hover:bg-zinc-200 disabled:bg-zinc-800 disabled:text-zinc-600 px-10 py-4 font-black uppercase tracking-tighter transition-all active:scale-95"
               >
-                {crawling ? 'Crawling...' : 'Start Crawl'}
+                {crawling ? 'EXEC_ACTIVE' : 'RUN_CRAWL'}
               </button>
             </div>
           </section>
 
-          <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700">
-              <p className="text-slate-400 text-sm">Total URLs</p>
-              <p className="text-3xl font-bold mt-1">{summary?.total || 0}</p>
+          <section className="grid grid-cols-1 md:grid-cols-3 gap-0 border border-zinc-800 bg-zinc-800">
+            <div className="bg-black p-8 border-r border-zinc-800">
+              <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest">Index Counts</p>
+              <p className="text-4xl font-black mt-2">{summary?.total || 0}</p>
             </div>
-            <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700">
-              <p className="text-slate-400 text-sm">Avg Response Time</p>
-              <p className="text-3xl font-bold mt-1 text-emerald-400">{summary?.avgResponseTimeMs || 0}ms</p>
+            <div className="bg-black p-8 border-r border-zinc-800">
+              <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest">Latency (avg)</p>
+              <p className="text-4xl font-black mt-2 text-white">{summary?.avgResponseTimeMs || 0}<span className="text-lg">ms</span></p>
             </div>
-            <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700">
-              <p className="text-slate-400 text-sm">Status</p>
-              <p className="text-3xl font-bold mt-1 text-blue-400">{crawling ? 'Active' : 'Idle'}</p>
+            <div className="bg-black p-8">
+              <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest">Engine State</p>
+              <p className={`text-4xl font-black mt-2 ${crawling ? 'text-white underline' : 'text-zinc-700'}`}>
+                {crawling ? 'ACTIVE' : 'STBY'}
+              </p>
             </div>
           </section>
           
-          <div className="bg-amber-900/20 border border-amber-900/50 p-4 rounded-xl text-amber-200 text-sm">
-            <strong>Note:</strong> On Vercel, long crawls may be interrupted due to serverless timeouts. For large sites, consider running the crawler on a persistent server like Railway.
+          <div className="bg-zinc-900 border border-zinc-800 p-6 text-zinc-400 text-[10px] leading-relaxed uppercase tracking-wider font-bold">
+            <span className="text-white bg-zinc-700 px-2 mr-2">NOTICE</span> 
+            Crawler is running on high-availability railway cloud. Connection to MongoDB cluster is established via primary connection string.
           </div>
         </main>
       </div>
