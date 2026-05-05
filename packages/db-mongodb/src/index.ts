@@ -69,6 +69,7 @@ export class ProjectDb {
 
   async upsertUrl(input: UpsertUrlInput): Promise<number> {
     if (!this.db) throw new Error('Not connected');
+    if (!input || !input.url) return 0;
     
     const existing = await this.db.collection('urls').findOne({ url: input.url });
     if (existing) {
@@ -101,12 +102,16 @@ export class ProjectDb {
     
     if (payload.headers && payload.headers.length > 0) {
       await this.db?.collection('headers').deleteMany({ url_id: urlId });
-      await this.db?.collection('headers').insertMany(
-        payload.headers.map(([key, value]) => ({ url_id: urlId, key, value }))
-      );
+      const headerDocs = payload.headers
+        .filter(h => h && h[0] && h[1]) // Ensure valid key-value pairs
+        .map(([key, value]) => ({ url_id: urlId, key, value }));
+      
+      if (headerDocs.length > 0) {
+        await this.db?.collection('headers').insertMany(headerDocs);
+      }
     }
 
-    if (payload.storeBody) {
+    if (payload.storeBody && payload.storeBody.body) {
       await this.db?.collection('url_sources').updateOne(
         { url_id: urlId },
         { $set: { body: payload.storeBody.body } },
@@ -124,16 +129,20 @@ export class ProjectDb {
   }
 
   async insertLinks(fromUrlId: number, links: DiscoveredLink[], fromDepth: number) {
-    if (links.length === 0) return;
-    await this.db?.collection('links').insertMany(
-      links.map(l => ({
+    if (!links || links.length === 0) return;
+    const linkDocs = links
+      .filter(l => l && l.toUrl)
+      .map(l => ({
         from_url_id: fromUrlId,
         to_url: l.toUrl,
         anchor: l.anchor,
         rel: l.rel,
         is_internal: l.isInternal ? 1 : 0
-      }))
-    );
+      }));
+
+    if (linkDocs.length > 0) {
+      await this.db?.collection('links').insertMany(linkDocs);
+    }
     
     const externals = links.filter(l => !l.isInternal);
     if (externals.length > 0) {

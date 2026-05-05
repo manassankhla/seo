@@ -49,8 +49,16 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white p-8 font-mono">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-transparent text-white p-8 font-mono relative overflow-hidden">
+      {/* Decorative Side HUD */}
+      <div className="fixed left-4 top-1/2 -translate-y-1/2 -rotate-90 origin-left text-[10px] text-zinc-800 font-black tracking-[1em] uppercase select-none pointer-events-none whitespace-nowrap">
+        SYSTEM_OPERATIONAL // CORE_ENGINE_v0.2.7 // RAILWAY_NODE_US_EAST
+      </div>
+      <div className="fixed right-4 top-1/2 -translate-y-1/2 rotate-90 origin-right text-[10px] text-zinc-800 font-black tracking-[1em] uppercase select-none pointer-events-none whitespace-nowrap">
+        DATA_STREAM_ACTIVE // MONGODB_ATLAS_PRIMARY // SECURE_SOCKET_LAYER
+      </div>
+
+      <div className="max-w-4xl mx-auto relative z-10">
         <header className="mb-12 border-b border-zinc-800 pb-8">
           <h1 className="text-5xl font-black tracking-tighter uppercase">
             SEO Spider <span className="text-zinc-600">v0.2.7</span>

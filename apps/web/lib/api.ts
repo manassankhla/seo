@@ -54,12 +54,20 @@ const localOverrides: Partial<FreeCrawlApi> = {
     return () => events.off('data:changed', cb);
   },
   crawlStart: async (config: any) => {
-    const res = await fetch(`${API_BASE}/crawl/start`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(config)
-    });
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/crawl/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        return { error: text || `HTTP_${res.status}` };
+      }
+      return res.json();
+    } catch (err: any) {
+      return { error: err.message || 'CONNECTION_FAILED' };
+    }
   }
 };
 
