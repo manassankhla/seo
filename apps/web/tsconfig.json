@@ -30,5 +30,10 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules"],
+  "references": [
+    { "path": "../../packages/shared-types" },
+    { "path": "../../packages/db-mongodb" },
+    { "path": "../../packages/core" }
+  ]
 }

@@ -155,18 +155,16 @@ export class ProjectDb {
     }
   }
 
-  async getSummary(): Promise<CrawlSummary> {
-    if (!this.db) return { totalUrls: 0, crawledUrls: 0, failedUrls: 0, totalResponseTimeMs: 0, responseSamples: 0, startedAt: 0, stoppedAt: 0 };
+  async summaryGet(): Promise<CrawlSummary> {
+    if (!this.db) return { total: 0, byStatus: {}, byContentKind: {} as any, byIndexability: {}, avgResponseTimeMs: 0, totalBytes: 0 };
     const total = await this.db.collection('urls').countDocuments();
-    const crawled = await this.db.collection('urls').countDocuments({ status_code: { $ne: null } });
     return {
-      totalUrls: total,
-      crawledUrls: crawled,
-      failedUrls: 0, // Placeholder
-      totalResponseTimeMs: 0,
-      responseSamples: 0,
-      startedAt: 0,
-      stoppedAt: 0
+      total,
+      byStatus: {},
+      byContentKind: {} as any,
+      byIndexability: {},
+      avgResponseTimeMs: 0,
+      totalBytes: 0
     };
   }
 

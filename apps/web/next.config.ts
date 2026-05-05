@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  transpilePackages: ["@freecrawl/core", "@freecrawl/db-mongodb", "@freecrawl/shared-types"]
 };
 
 export default nextConfig;
