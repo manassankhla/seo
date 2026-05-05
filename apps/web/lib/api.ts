@@ -23,7 +23,7 @@ class PollingEventEmitter {
     this.intervals[event] = setInterval(async () => {
       // In a real app, you'd fetch the latest events from the DB
       // For this demo, we'll just poll the summary
-      const res = await fetch(`${API_BASE}/rpc/getSummary`, { method: 'POST' });
+      const res = await fetch(`${API_BASE}/rpc/summaryGet`, { method: 'POST' });
       if (res.ok) {
         const data = await res.json();
         this.listeners[event]?.forEach(cb => cb(data));

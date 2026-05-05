@@ -10,7 +10,7 @@ export default function Home() {
 
   useEffect(() => {
     const fetchSummary = async () => {
-      const s = await webApi.getSummary();
+      const s = await webApi.summaryGet();
       setSummary(s);
     };
     fetchSummary();
@@ -62,11 +62,11 @@ export default function Home() {
           <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700">
               <p className="text-slate-400 text-sm">Total URLs</p>
-              <p className="text-3xl font-bold mt-1">{summary?.totalUrls || 0}</p>
+              <p className="text-3xl font-bold mt-1">{summary?.total || 0}</p>
             </div>
             <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700">
-              <p className="text-slate-400 text-sm">Crawled</p>
-              <p className="text-3xl font-bold mt-1 text-emerald-400">{summary?.crawledUrls || 0}</p>
+              <p className="text-slate-400 text-sm">Avg Response Time</p>
+              <p className="text-3xl font-bold mt-1 text-emerald-400">{summary?.avgResponseTimeMs || 0}ms</p>
             </div>
             <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700">
               <p className="text-slate-400 text-sm">Status</p>
