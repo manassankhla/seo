@@ -102,9 +102,9 @@ export default function Home() {
                 <span className="text-zinc-800">RDY_0.1</span>
               </h2>
               <div className="h-48 overflow-y-auto space-y-1 font-mono text-[9px] text-zinc-500">
-                <p>{`> [${new Date().toLocaleTimeString()}] KERNEL_INIT_SUCCESS`}</p>
-                <p>{`> [${new Date().toLocaleTimeString()}] MONGO_ATLAS_CONNECTED`}</p>
-                {crawling && <p className="text-white animate-pulse">{`> [${new Date().toLocaleTimeString()}] CRAWL_ENGINE_ACTIVE_STREAMING`}</p>}
+                <p suppressHydrationWarning>{`> [${new Date().toLocaleTimeString()}] KERNEL_INIT_SUCCESS`}</p>
+                <p suppressHydrationWarning>{`> [${new Date().toLocaleTimeString()}] MONGO_ATLAS_CONNECTED`}</p>
+                {crawling && <p className="text-white animate-pulse" suppressHydrationWarning>{`> [${new Date().toLocaleTimeString()}] CRAWL_ENGINE_ACTIVE_STREAMING`}</p>}
                 <p>{`> [STBY] WAITING_FOR_INPUT...`}</p>
               </div>
             </section>
