@@ -3,7 +3,7 @@ import { getDb } from '@/lib/db';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { method: string } }
+  { params }: { params: Promise<{ method: string }> }
 ) {
   const method = (await params).method;
   const input = await request.json().catch(() => ({}));
