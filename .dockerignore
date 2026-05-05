@@ -1,0 +1,17 @@
+node_modules
+.next
+.turbo
+apps/desktop
+apps/cli
+packages/core/node_modules
+packages/db-mongodb/node_modules
+packages/shared-types/node_modules
+dist
+build
+out
+release
+*.exe
+*.dmg
+*.AppImage
+*.deb
+*.rpm
