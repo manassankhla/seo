@@ -5,8 +5,6 @@
     { "path": "./packages/db" },
     { "path": "./packages/db-mongodb" },
     { "path": "./packages/core" },
-    { "path": "./apps/desktop" },
-    { "path": "./apps/web" },
-    { "path": "./apps/cli" }
+    { "path": "./apps/web" }
   ]
 }
