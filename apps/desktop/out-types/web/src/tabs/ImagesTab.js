@@ -1,0 +1,173 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import clsx from 'clsx';
+import { useAppStore } from '../store.js';
+import { InfoTip } from '../components/InfoTip.js';
+const ROW_HEIGHT = 24;
+const HEADER_HEIGHT = 28;
+const ROW_NUM_WIDTH = 56;
+const STATUS_BAR_HEIGHT = 22;
+// I-4 — Crawl-aware polling cadence (see BrokenLinksTab for rationale).
+const POLL_MS_RUNNING = 3000;
+const POLL_MS_IDLE = 30_000;
+const PAGE_SIZE = 5000;
+export function ImagesTab() {
+    const activeCategory = useAppStore((s) => s.activeCategory);
+    const dataVersion = useAppStore((s) => s.dataVersion);
+    const progress = useAppStore((s) => s.progress);
+    const [rows, setRows] = useState([]);
+    const [total, setTotal] = useState(0);
+    const [search, setSearch] = useState('');
+    const [sortBy, setSortBy] = useState('occurrences');
+    const [sortDir, setSortDir] = useState('desc');
+    const scrollRef = useRef(null);
+    // Missing-alt filter is driven by the Overview sidebar's Issues section —
+    // clicking "Images Missing Alt" switches category, which we watch here.
+    const missingAltOnly = activeCategory === 'issues:image-missing-alt';
+    useEffect(() => {
+        let cancelled = false;
+        const load = async () => {
+            const res = await window.freecrawl.imagesQuery({
+                limit: PAGE_SIZE,
+                offset: 0,
+                search: search || undefined,
+                missingAltOnly,
+            });
+            if (cancelled)
+                return;
+            setRows(res.rows);
+            setTotal(res.total);
+        };
+        void load();
+        const cadence = progress?.running ? POLL_MS_RUNNING : POLL_MS_IDLE;
+        const id = setInterval(load, cadence);
+        return () => {
+            cancelled = true;
+            clearInterval(id);
+        };
+    }, [search, missingAltOnly, dataVersion, progress?.running]);
+    const sorted = useMemo(() => {
+        const copy = [...rows];
+        copy.sort((a, b) => {
+            const av = a[sortBy];
+            const bv = b[sortBy];
+            let cmp;
+            if (av === null && bv === null)
+                cmp = 0;
+            else if (av === null)
+                cmp = 1;
+            else if (bv === null)
+                cmp = -1;
+            else if (typeof av === 'number' && typeof bv === 'number')
+                cmp = av - bv;
+            else
+                cmp = String(av).localeCompare(String(bv));
+            return sortDir === 'asc' ? cmp : -cmp;
+        });
+        return copy;
+    }, [rows, sortBy, sortDir]);
+    const virtualizer = useVirtualizer({
+        count: sorted.length,
+        getScrollElement: () => scrollRef.current,
+        estimateSize: () => ROW_HEIGHT,
+        overscan: 30,
+        getItemKey: (index) => sorted[index]?.id ?? index,
+    });
+    const handleSort = (key) => {
+        if (sortBy === key)
+            setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+        else {
+            setSortBy(key);
+            setSortDir('asc');
+        }
+    };
+    const columns = [
+        {
+            key: 'src',
+            label: 'Image URL',
+            width: 520,
+            info: 'Resolved absolute URL of the <img src> attribute.',
+            example: 'https://example.com/img/hero.png',
+        },
+        {
+            key: 'alt',
+            label: 'Alt',
+            width: 320,
+            info: 'Value of the alt attribute. Empty cell = no alt declared (accessibility/SEO issue).',
+            example: 'Sunset over the mountain ridge',
+        },
+        {
+            key: 'width',
+            label: 'Width',
+            width: 80,
+            align: 'right',
+            info: 'Width attribute value (in pixels) declared on the <img> tag, when present.',
+            example: '1280',
+        },
+        {
+            key: 'height',
+            label: 'Height',
+            width: 80,
+            align: 'right',
+            info: 'Height attribute value (in pixels) declared on the <img> tag, when present.',
+            example: '720',
+        },
+        {
+            key: 'occurrences',
+            label: 'Occurrences',
+            width: 100,
+            align: 'right',
+            info: 'How many distinct pages reference this image. High values typically indicate site-wide assets (logos, icons).',
+            example: '47',
+        },
+    ];
+    const colsWidth = columns.reduce((n, c) => n + c.width, 0);
+    const totalWidth = ROW_NUM_WIDTH + colsWidth;
+    return (_jsxs("div", { className: "flex h-full flex-col", children: [_jsxs("div", { className: "flex shrink-0 items-center gap-2 border-b border-surface-800 bg-surface-900/30 px-3 py-1.5", children: [_jsx("input", { className: "input w-96", placeholder: "Search image URLs / alt\u2026", value: search, onChange: (e) => setSearch(e.target.value), spellCheck: false }), missingAltOnly && (_jsx("span", { className: "rounded border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] text-amber-300", children: "Missing Alt only" })), _jsxs("div", { className: "ml-auto text-[11px] text-surface-500", children: [_jsx("span", { className: "font-mono text-surface-200", children: total.toLocaleString() }), " images", _jsxs("span", { className: "ml-2 text-surface-600", children: ["(", sorted.length.toLocaleString(), " loaded)"] })] })] }), _jsxs("div", { ref: scrollRef, className: "relative flex-1 select-none overflow-auto", children: [_jsxs("div", { style: { minWidth: totalWidth, width: '100%' }, children: [_jsxs("div", { className: "sticky top-0 z-10 flex bg-surface-900 text-[11px]", style: { minWidth: totalWidth, width: '100%', height: HEADER_HEIGHT }, children: [_jsx("div", { className: "flex items-center justify-end border-b border-r border-surface-800 px-2 font-medium text-surface-400", style: {
+                                            width: ROW_NUM_WIDTH,
+                                            minWidth: ROW_NUM_WIDTH,
+                                            flex: `0 0 ${ROW_NUM_WIDTH}px`,
+                                        }, children: "Row" }), columns.map((c) => (_jsxs("div", { className: "flex cursor-pointer items-center gap-1 border-b border-r border-surface-800 pl-2 pr-3 font-medium text-surface-300 hover:text-surface-100", style: { width: c.width, minWidth: c.width, flex: `0 0 ${c.width}px` }, onClick: () => handleSort(c.key), children: [_jsx("span", { className: clsx('truncate', c.align === 'right' && 'ml-auto'), children: c.label }), (c.info || c.example) && (_jsx("span", { className: "shrink-0", onClick: (e) => e.stopPropagation(), children: _jsx(InfoTip, { info: c.info, example: c.example }) })), sortBy === c.key && (_jsx("span", { className: "text-surface-500", children: sortDir === 'asc' ? '▲' : '▼' }))] }, c.key))), _jsx("div", { className: "flex-1 border-b border-surface-800" })] }), _jsx("div", { className: "relative", style: {
+                                    height: virtualizer.getTotalSize(),
+                                    minWidth: totalWidth,
+                                    width: '100%',
+                                }, children: virtualizer.getVirtualItems().map((vi) => {
+                                    const row = sorted[vi.index];
+                                    if (!row)
+                                        return null;
+                                    return (_jsxs("div", { "data-index": vi.index, className: "absolute left-0 top-0 flex items-center border-b border-surface-900 text-[11px] hover:bg-surface-900/60", style: {
+                                            transform: `translateY(${vi.start}px)`,
+                                            height: ROW_HEIGHT,
+                                            minWidth: totalWidth,
+                                            width: '100%',
+                                        }, children: [_jsx("div", { className: "flex items-center justify-end overflow-hidden border-r border-surface-900 px-2 font-mono tabular-nums text-surface-500", style: {
+                                                    width: ROW_NUM_WIDTH,
+                                                    minWidth: ROW_NUM_WIDTH,
+                                                    flex: `0 0 ${ROW_NUM_WIDTH}px`,
+                                                }, children: vi.index + 1 }), _jsx("div", { className: "overflow-hidden px-2", style: {
+                                                    width: columns[0].width,
+                                                    minWidth: columns[0].width,
+                                                    flex: `0 0 ${columns[0].width}px`,
+                                                }, children: _jsx("span", { className: "block truncate font-mono text-surface-100", title: row.src, children: row.src }) }), _jsx("div", { className: "overflow-hidden px-2", style: {
+                                                    width: columns[1].width,
+                                                    minWidth: columns[1].width,
+                                                    flex: `0 0 ${columns[1].width}px`,
+                                                }, children: _jsx("span", { className: clsx('block truncate', row.alt === null ? 'text-amber-400' : 'text-surface-200'), title: row.alt === null ? 'Missing alt attribute' : row.alt, children: row.alt === null ? (_jsx("span", { className: "italic", children: "missing" })) : row.alt === '' ? (_jsx("span", { className: "text-surface-600", children: "(empty \u2014 decorative)" })) : (row.alt) }) }), _jsx("div", { className: "overflow-hidden px-2 text-right", style: {
+                                                    width: columns[2].width,
+                                                    minWidth: columns[2].width,
+                                                    flex: `0 0 ${columns[2].width}px`,
+                                                }, children: _jsx("span", { className: "block truncate font-mono tabular-nums text-surface-300", children: row.width ?? _jsx("span", { className: "text-surface-700", children: "\u2014" }) }) }), _jsx("div", { className: "overflow-hidden px-2 text-right", style: {
+                                                    width: columns[3].width,
+                                                    minWidth: columns[3].width,
+                                                    flex: `0 0 ${columns[3].width}px`,
+                                                }, children: _jsx("span", { className: "block truncate font-mono tabular-nums text-surface-300", children: row.height ?? _jsx("span", { className: "text-surface-700", children: "\u2014" }) }) }), _jsx("div", { className: "overflow-hidden px-2 text-right", style: {
+                                                    width: columns[4].width,
+                                                    minWidth: columns[4].width,
+                                                    flex: `0 0 ${columns[4].width}px`,
+                                                }, children: _jsx("span", { className: "block truncate font-mono tabular-nums text-surface-200", children: row.occurrences.toLocaleString() }) }), _jsx("div", { className: "flex-1" })] }, vi.key));
+                                }) })] }), total === 0 && (_jsx("div", { className: "pointer-events-none absolute inset-0 flex items-center justify-center", style: { top: HEADER_HEIGHT }, children: _jsxs("div", { className: "max-w-md text-center", children: [_jsx("div", { className: "mb-1 text-sm font-semibold text-surface-300", children: "No images" }), _jsx("div", { className: "text-xs text-surface-500", children: missingAltOnly
+                                        ? 'No images without alt text.'
+                                        : 'Crawl a site to discover images.' })] }) }))] }), _jsx("div", { className: "flex shrink-0 items-center justify-end gap-4 border-t border-surface-800 bg-surface-900/60 px-3 text-[11px] text-surface-400", style: { height: STATUS_BAR_HEIGHT }, children: _jsxs("span", { children: ["Total:", ' ', _jsx("span", { className: "font-mono tabular-nums text-surface-200", children: total.toLocaleString() })] }) })] }));
+}
+//# sourceMappingURL=ImagesTab.js.map

@@ -7,8 +7,9 @@ node_modules/
 dist/
 build/
 out/
-out-types/
-release/
+.next/
+.turbo/
+node_modules/
 *.tsbuildinfo
 *.exe
 *.dmg
