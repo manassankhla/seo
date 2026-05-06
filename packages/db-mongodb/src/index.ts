@@ -21,7 +21,11 @@ export class ProjectDb {
   constructor(private uri: string, private dbName: string = 'freecrawl') {}
 
   async connect() {
-    this.client = new MongoClient(this.uri);
+    this.client = new MongoClient(this.uri, {
+      tls: true,
+      tlsAllowInvalidCertificates: true, // Bypass local SSL issues for now
+      connectTimeoutMS: 10000,
+    });
     await this.client.connect();
     this.db = this.client.db(this.dbName);
     

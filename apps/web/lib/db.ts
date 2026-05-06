@@ -20,5 +20,5 @@ export async function getDb() {
     }
   }
   
-  throw new Error(`DATABASE_CONNECTION_FAILED: ${lastErr?.message || 'Unknown'}`);
+  throw new Error(`DATABASE_CONNECTION_FAILED: ${lastErr?.message || 'Unknown'}. TIP: Check if IP 157.48.247.16 is whitelisted in MongoDB Atlas.`);
 }

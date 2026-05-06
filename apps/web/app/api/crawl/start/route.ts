@@ -25,34 +25,44 @@ export async function POST(request: NextRequest) {
     }
 
     const db = await getDb();
-    console.log('DB Connected');
+    console.log('>>> [API] DB CONNECTED SUCCESSFULLY');
 
     const crawler = new Crawler(config, db as any, {
       writeFetchedUrl: async (payload) => {
-        console.log('Writing fetched URL:', payload?.upsert?.url);
+        if (!payload) return { urlId: 0 };
         return db.writeFetchedUrl(payload);
       }
     });
 
-    // We don't await crawler.start() here because it would time out the request.
-    // We fire and forget, knowing it might be killed.
-    console.log('Starting crawler engine...');
+    if (activeCrawler) {
+      try { activeCrawler.stop(); } catch (e) {}
+    }
+    activeCrawler = crawler;
+
+    console.log('>>> [API] STARTING CRAWLER ENGINE...');
     crawler.start().catch(err => {
-      console.error('CRAWLER ENGINE ERROR:', err);
+      console.error('>>> [API] CRAWLER RUNTIME ERROR:', err);
     });
 
-    return NextResponse.json({ success: true, message: 'Crawl started' });
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Crawl started',
+      debug_info: { startUrl: config.startUrl }
+    });
   } catch (err: any) {
+    const isSslError = err?.message?.includes('SSL') || err?.message?.includes('0A000438');
+    const displayError = isSslError 
+      ? 'MONGODB_IP_WHITELIST_ERROR: Please add your IP 157.48.247.16 to MongoDB Atlas Network Access.'
+      : (err?.message || 'INTERNAL_SERVER_ERROR');
+
     console.error('--- !!! API ROUTE FATAL ERROR !!! ---');
-    console.error('Name:', err?.name);
-    console.error('Message:', err?.message);
-    console.error('Code:', err?.code);
-    console.error('Stack:', err?.stack);
-    console.error('---------------------------------------');
+    console.error('Error:', displayError);
+    if (err?.stack) console.error('Stack:', err.stack);
+    
     return NextResponse.json({ 
       success: false, 
-      error: err?.message || 'INTERNAL_SERVER_ERROR',
-      debug_code: err?.code
+      error: displayError,
+      is_database_error: true
     }, { status: 500 });
   }
 }
