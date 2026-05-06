@@ -1,7 +1,7 @@
 import { createWriteStream } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
-import type { ProjectDb } from '@freecrawl/db';
+import type { ProjectDb } from '@freecrawl/db-mongodb';
 import type { CrawlUrlRow, UrlCategory } from '@freecrawl/shared-types';
 
 const CSV_COLUMNS: (keyof CrawlUrlRow)[] = [

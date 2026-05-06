@@ -12,7 +12,7 @@ import type {
   Indexability,
 } from '@freecrawl/shared-types';
 import { EXPENSIVE_ISSUE_DEFINITIONS } from '@freecrawl/shared-types';
-import { type ProjectDb } from '@freecrawl/db';
+import { type ProjectDb } from '@freecrawl/db-mongodb';
 import {
   normalizeUrl,
   isSameHost,

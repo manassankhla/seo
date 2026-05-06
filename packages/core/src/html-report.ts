@@ -1,7 +1,7 @@
 import { createWriteStream } from 'node:fs';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
-import type { ProjectDb } from '@freecrawl/db';
+import type { ProjectDb } from '@freecrawl/db-mongodb';
 import type { CrawlSummary, OverviewCounts } from '@freecrawl/shared-types';
 
 /**

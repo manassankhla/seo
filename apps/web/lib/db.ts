@@ -1,4 +1,4 @@
-import clientPromise from './mongodb';
+
 import { ProjectDb } from '@freecrawl/db-mongodb';
 
 export async function getDb() {

@@ -17,7 +17,7 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@freecrawl/db": "*",
+    "@freecrawl/db-mongodb": "*",
     "@freecrawl/shared-types": "*",
     "cacheable-lookup": "^7.0.0",
     "cheerio": "^1.0.0",

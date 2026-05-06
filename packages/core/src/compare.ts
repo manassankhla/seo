@@ -1,4 +1,4 @@
-import type { ProjectDb } from '@freecrawl/db';
+import type { ProjectDb } from '@freecrawl/db-mongodb';
 
 /**
  * Cross-project diff engine. Compares two crawl databases by URL key

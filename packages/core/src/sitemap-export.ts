@@ -3,7 +3,7 @@ import { pipeline } from 'node:stream/promises';
 import { Readable, Transform } from 'node:stream';
 import { createGzip } from 'node:zlib';
 import path from 'node:path';
-import type { ProjectDb } from '@freecrawl/db';
+import type { ProjectDb } from '@freecrawl/db-mongodb';
 
 export type SitemapVariant = 'standard' | 'image' | 'hreflang';
 
