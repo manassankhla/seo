@@ -165,15 +165,39 @@ export class ProjectDb {
     }
   }
 
-  async summaryGet(): Promise<CrawlSummary> {
+  async getSummary(): Promise<CrawlSummary> {
     if (!this.db) return { total: 0, byStatus: {}, byContentKind: {} as any, byIndexability: {}, avgResponseTimeMs: 0, totalBytes: 0 };
     const total = await this.db.collection('urls').countDocuments();
+    const urls = await this.db.collection('urls').find().toArray();
+    
+    const byStatus: Record<number, number> = {};
+    const byContentKind: Record<string, number> = {};
+    const byIndexability: Record<string, number> = {};
+    let totalTime = 0;
+    let countWithTime = 0;
+
+    for (const url of urls as any[]) {
+      if (url.status_code) {
+        byStatus[url.status_code] = (byStatus[url.status_code] || 0) + 1;
+      }
+      if (url.content_kind) {
+        byContentKind[url.content_kind] = (byContentKind[url.content_kind] || 0) + 1;
+      }
+      if (url.indexability) {
+        byIndexability[url.indexability] = (byIndexability[url.indexability] || 0) + 1;
+      }
+      if (url.response_time_ms) {
+        totalTime += url.response_time_ms;
+        countWithTime++;
+      }
+    }
+
     return {
       total,
-      byStatus: {},
-      byContentKind: {} as any,
-      byIndexability: {},
-      avgResponseTimeMs: 0,
+      byStatus,
+      byContentKind: byContentKind as any,
+      byIndexability,
+      avgResponseTimeMs: countWithTime > 0 ? Math.round(totalTime / countWithTime) : 0,
       totalBytes: 0
     };
   }
@@ -210,5 +234,9 @@ export class ProjectDb {
       ...pending.map(url => ({ url, depth: 1 })), // Depth is hard to track without aggregation
       ...(recrawl || []).map((r: any) => ({ url: r.url, depth: r.depth }))
     ];
+  }
+
+  async summaryGet() {
+    return this.getSummary();
   }
 }

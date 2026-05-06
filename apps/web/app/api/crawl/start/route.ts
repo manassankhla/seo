@@ -5,10 +5,20 @@ import { Crawler } from '@freecrawl/core';
 let activeCrawler: any = null;
 
 export async function POST(request: NextRequest) {
+  console.log('>>> [API] RECEIVED REQUEST AT /api/crawl/start');
   try {
-    const config = await request.json();
-    console.log('--- CRAWL START REQUEST ---');
-    console.log('Config:', JSON.stringify(config, null, 2));
+    const rawBody = await request.text();
+    console.log('>>> [API] RAW BODY:', rawBody);
+    
+    let config;
+    try {
+      config = JSON.parse(rawBody);
+    } catch (pe) {
+      console.error('>>> [API] JSON PARSE ERROR:', pe);
+      return NextResponse.json({ success: false, error: 'Malformed JSON' }, { status: 400 });
+    }
+
+    console.log('>>> [API] CONFIG OBJECT:', JSON.stringify(config, null, 2));
     
     if (!config || typeof config !== 'object') {
       return NextResponse.json({ success: false, error: 'Invalid config payload' }, { status: 400 });
@@ -33,7 +43,16 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'Crawl started' });
   } catch (err: any) {
-    console.error('API ROUTE ERROR:', err);
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    console.error('--- !!! API ROUTE FATAL ERROR !!! ---');
+    console.error('Name:', err?.name);
+    console.error('Message:', err?.message);
+    console.error('Code:', err?.code);
+    console.error('Stack:', err?.stack);
+    console.error('---------------------------------------');
+    return NextResponse.json({ 
+      success: false, 
+      error: err?.message || 'INTERNAL_SERVER_ERROR',
+      debug_code: err?.code
+    }, { status: 500 });
   }
 }
