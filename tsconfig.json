@@ -2,7 +2,6 @@
   "files": [],
   "references": [
     { "path": "./packages/shared-types" },
-    { "path": "./packages/db" },
     { "path": "./packages/db-mongodb" },
     { "path": "./packages/core" },
     { "path": "./apps/web" }

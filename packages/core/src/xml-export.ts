@@ -178,7 +178,7 @@ export async function exportUrlsToXml(
 ): Promise<{ rowsWritten: number }> {
   let rowsWritten = 0;
 
-  const source: Iterable<CrawlUrlRow> =
+  const source: AsyncIterable<CrawlUrlRow> =
     options.selectedIds && options.selectedIds.length > 0
       ? db.iterateUrlsByIds(options.selectedIds)
       : options.category && options.category !== 'all'
@@ -190,7 +190,7 @@ export async function exportUrlsToXml(
     // We don't know the row count up front (we're streaming) so the
     // root element opens without it — matches the SF CSV-XML output.
     yield `<crawl exportedAt="${new Date().toISOString()}">\n`;
-    for (const row of source) {
+    for await (const row of source) {
       const fields = XML_COLUMNS.map((col) =>
         renderField(col, (row as unknown as Record<string, unknown>)[col]),
       ).join('');

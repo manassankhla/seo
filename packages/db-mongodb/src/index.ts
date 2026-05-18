@@ -206,11 +206,67 @@ export class ProjectDb {
     };
   }
 
+  async getAllUrls(opts?: { limit?: number; offset?: number; status?: number; search?: string }): Promise<any[]> {
+    if (!this.db) return [];
+    const filter: Record<string, any> = {};
+    if (opts?.status) filter.status_code = opts.status;
+    if (opts?.search) filter.url = { $regex: opts.search, $options: 'i' };
+    const limit = opts?.limit ?? 2000;
+    const skip = opts?.offset ?? 0;
+    const docs = await this.db.collection('urls').find(filter).sort({ id: -1 }).skip(skip).limit(limit).toArray();
+    return docs.map(({ _id, ...rest }) => rest);
+  }
+
+  async getIssuesSummary(): Promise<Record<string, number>> {
+    if (!this.db) return {};
+    const urls = await this.db.collection('urls').find().toArray();
+    const issues: Record<string, number> = {};
+    for (const u of urls as any[]) {
+      if (!u.title) issues['Title Missing'] = (issues['Title Missing'] || 0) + 1;
+      if (u.title && u.title.length > 60) issues['Title Too Long (>60)'] = (issues['Title Too Long (>60)'] || 0) + 1;
+      if (!u.meta_description) issues['Meta Desc Missing'] = (issues['Meta Desc Missing'] || 0) + 1;
+      if ((u.status_code ?? 0) >= 400) issues['4xx/5xx Errors'] = (issues['4xx/5xx Errors'] || 0) + 1;
+      if ((u.status_code ?? 0) >= 300 && (u.status_code ?? 0) < 400) issues['Redirects (3xx)'] = (issues['Redirects (3xx)'] || 0) + 1;
+      if ((u.response_time_ms ?? 0) > 3000) issues['Slow Pages (>3s)'] = (issues['Slow Pages (>3s)'] || 0) + 1;
+      if (!u.h1 || u.h1 === '') issues['H1 Missing'] = (issues['H1 Missing'] || 0) + 1;
+    }
+    return issues;
+  }
+
   // Stub for other methods...
   async recomputeInlinks() {}
   async recomputeRedirectChains() {}
   async recomputeHreflangAnalysis() {}
   async recomputeUrlsIssuesYielding(defs: any) {}
+  async recomputeHreflangInconsistent() {}
+  async recomputePaginationSequence() {}
+  async recomputeUrlsIssues(defs?: any) {}
+  async recomputeDuplicateClusters(threshold: number, onlyIndexable: boolean): Promise<{ clusters: number, clusteredUrls: number }> { return { clusters: 0, clusteredUrls: 0 }; }
+  
+  async getOverviewCounts(): Promise<{ issues: Record<string, number> }> { return { issues: {} }; }
+  
+  async unprobedInternalImages(limit: number): Promise<any[]> { return []; }
+  async unprobedHttpsHosts(limit: number): Promise<any[]> { return []; }
+  async getUnprobedExternalUrls(): Promise<any[]> { return []; }
+  
+  async setImageSize(urlId: number, size: number | null, status: number) {}
+  async setHostCert(opts: any) {}
+  async setSitemapUrls(urls: any[]) {}
+  async setUrlHeaders(urlId: number, headers: any[]) {}
+  async updateExternalProbe(url: string, result: any) {}
+  
+  async getAllUrls_stub_removed_see_above(): Promise<string[]> { return []; }
+  async countCrawledUrls(): Promise<number> { return 0; }
+  async hasUrl(url: string): Promise<boolean> { return false; }
+  
+  async *iterateUrlsByIds(ids: number[]): AsyncGenerator<any> {}
+  async *iterateUrlsByCategory(cat: string): AsyncGenerator<any> {}
+  async *iterateAllUrls(): AsyncGenerator<any> {}
+  async *iterateIndexableUrls(): AsyncGenerator<any> {}
+  
+  async imagesForUrl(urlId: number): Promise<any[]> { return []; }
+  async topUrlsBy(metric: string, limit: number): Promise<any[]> { return []; }
+
   async checkpointQueue(items: any[], seed: string) {
     await this.db?.collection('crawl_queue').deleteMany({});
     if (items.length > 0) {

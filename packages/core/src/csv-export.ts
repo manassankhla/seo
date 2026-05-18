@@ -48,7 +48,7 @@ export async function exportUrlsToCsv(
   let rowsWritten = 0;
   const header = CSV_COLUMNS.join(',') + '\n';
 
-  const source: Iterable<CrawlUrlRow> =
+  const source: AsyncIterable<CrawlUrlRow> =
     options.selectedIds && options.selectedIds.length > 0
       ? db.iterateUrlsByIds(options.selectedIds)
       : options.category && options.category !== 'all'
@@ -57,7 +57,7 @@ export async function exportUrlsToCsv(
 
   const generator = async function* (): AsyncGenerator<string> {
     yield '﻿' + header;
-    for (const row of source) {
+    for await (const row of source) {
       const line = CSV_COLUMNS.map((col) => escapeCsv(row[col])).join(',') + '\n';
       rowsWritten++;
       yield line;

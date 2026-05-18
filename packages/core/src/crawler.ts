@@ -381,11 +381,11 @@ export class Crawler extends EventEmitter {
       // app launch doesn't offer to "resume" a crawl that already
       // finished successfully.
       try {
-        this.db.clearQueueCheckpoint();
+        await this.db.clearQueueCheckpoint();
       } catch {
         /* checkpoint table may not yet exist on very old DBs — ignore */
       }
-      this.emit('done', this.db.getSummary());
+      this.emit('done', await this.db.getSummary());
     }
       return;
     }
@@ -403,11 +403,11 @@ export class Crawler extends EventEmitter {
     // Fresh-start vs. resume decision. If the start URL matches the one
     // recorded from the previous crawl, we keep existing rows and resume.
     // If it differs (or there is no previous crawl), we wipe the tables.
-    const previousStart = this.db.getMeta('startUrl');
+    const previousStart = await this.db.getMeta('startUrl');
     if (previousStart !== start) {
-      this.db.reset();
+      await this.db.reset();
     }
-    this.db.setMeta('startUrl', start);
+    await this.db.setMeta('startUrl', start);
 
     const origin = new URL(start).origin;
     // robots.txt + sitemap discovery used to block the crawl start
@@ -441,7 +441,7 @@ export class Crawler extends EventEmitter {
 
     // Hydrate in-memory state from the DB so resume starts from the right
     // point; then queue whatever work is still pending.
-    this.hydrateFromDb();
+    await this.hydrateFromDb();
 
     try {
       // Wait for internal crawl first, then drain any external probes still
@@ -477,7 +477,7 @@ export class Crawler extends EventEmitter {
         // drain would happily crawl URLs that the live link-follow
         // path explicitly skipped, ending up with a different result
         // than a "no drain" first crawl would produce.
-        const pending = this.db.getPendingInternalLinks({ excludeNofollow });
+        const pending = await this.db.getPendingInternalLinks({ excludeNofollow });
         if (pending.length === 0) break;
         if (pending.length === lastPending) break;
         lastPending = pending.length;
@@ -513,34 +513,34 @@ export class Crawler extends EventEmitter {
       await yieldToEventLoop();
       this.emit('info', 'Recomputing inlinks…');
       this.setOp('post-crawl:recompute-inlinks');
-      this.db.recomputeInlinks();
+      await this.db.recomputeInlinks();
     }
     if (this.config.analyseRedirectChains) {
       await yieldToEventLoop();
       this.emit('info', 'Recomputing redirect chains…');
       this.setOp('post-crawl:recompute-redirect-chains');
-      this.db.recomputeRedirectChains();
+      await this.db.recomputeRedirectChains();
     }
     if (this.config.analyseHreflang) {
       await yieldToEventLoop();
       this.emit('info', 'Recomputing hreflang analysis…');
       this.setOp('post-crawl:recompute-hreflang');
-      this.db.recomputeHreflangAnalysis();
+      await this.db.recomputeHreflangAnalysis();
       await yieldToEventLoop();
       this.setOp('post-crawl:recompute-hreflang-inconsistent');
-      this.db.recomputeHreflangInconsistent();
+      await this.db.recomputeHreflangInconsistent();
     }
     if (this.config.analyseDuplicates) {
       await yieldToEventLoop();
       this.emit('info', 'Clustering duplicates…');
       this.setOp('post-crawl:cluster-duplicates');
-      this.runDuplicateClustering();
+      await this.runDuplicateClustering();
     }
     if (this.config.analysePagination) {
       await yieldToEventLoop();
       this.emit('info', 'Detecting pagination sequence gaps…');
       this.setOp('post-crawl:pagination-sequence');
-      this.db.recomputePaginationSequence();
+      await this.db.recomputePaginationSequence();
     }
     if (this.config.analyseIssues) {
       await yieldToEventLoop();
@@ -569,8 +569,8 @@ export class Crawler extends EventEmitter {
     // Suppress 'done' if a stop() ran during teardown — otherwise the
     // zombie crawler's done-event clobbers the new crawl's UI state.
     if (!this.stopped) {
-      this.emit('done', this.db.getSummary());
-      this.fireWebhook();
+      this.emit('done', await this.db.getSummary());
+      await this.fireWebhook();
     }
   }
 
@@ -580,17 +580,17 @@ export class Crawler extends EventEmitter {
    * thrown — so a 500 from a misconfigured Slack hook can't break the
    * crawl teardown.
    */
-  private fireWebhook(): void {
+  private async fireWebhook(): Promise<void> {
     const url = this.config.webhookUrl?.trim();
     if (!url) return;
-    const summary = this.db.getSummary();
-    const issues = this.db.getOverviewCounts().issues;
+    const summary = await this.db.getSummary();
+    const issues = (await this.db.getOverviewCounts()).issues;
     const payload = {
       finishedAt: new Date().toISOString(),
       startUrl: this.config.startUrl,
       durationMs: Date.now() - this.startedAt,
       summary,
-      issues,
+      issues: issues as any,
     };
     // Lazy import to avoid pulling fetch-via-undici at module load on
     // CLI-only paths that never enable the webhook.
@@ -613,11 +613,11 @@ export class Crawler extends EventEmitter {
    * cluster count as an `info` event so the user can see the post-crawl
    * pass actually fired. Threshold = 0 disables clustering.
    */
-  private runDuplicateClustering(): void {
+  private async runDuplicateClustering(): Promise<void> {
     const threshold = this.config.nearDuplicateHammingThreshold;
     if (!threshold || threshold <= 0) return;
     try {
-      const { clusters, clusteredUrls } = this.db.recomputeDuplicateClusters(
+      const { clusters, clusteredUrls } = await this.db.recomputeDuplicateClusters(
         threshold,
         this.config.duplicatesOnlyIndexable,
       );
@@ -649,7 +649,7 @@ export class Crawler extends EventEmitter {
     if (this.stopped) return;
     let unprobed: { id: number; src: string }[] = [];
     try {
-      unprobed = this.db.unprobedInternalImages(20_000);
+      unprobed = await this.db.unprobedInternalImages(20_000);
     } catch (err) {
       this.emit(
         'info',
@@ -694,7 +694,7 @@ export class Crawler extends EventEmitter {
           });
           const lenStr = res.headers.get('content-length');
           const len = lenStr !== null ? Number.parseInt(lenStr, 10) : null;
-          this.db.setImageSize(
+          await this.db.setImageSize(
             entry.id,
             Number.isFinite(len) && len !== null && len >= 0 ? len : null,
             res.status,
@@ -712,7 +712,7 @@ export class Crawler extends EventEmitter {
         } catch {
           // Mark with status 0 so we don't re-probe on the next crawl.
           try {
-            this.db.setImageSize(entry.id, null, 0);
+            await this.db.setImageSize(entry.id, null, 0);
           } catch {
             /* ignore */
           }
@@ -743,7 +743,7 @@ export class Crawler extends EventEmitter {
     if (this.stopped) return;
     let hosts: string[] = [];
     try {
-      hosts = this.db.unprobedHttpsHosts(2_000);
+      hosts = await this.db.unprobedHttpsHosts(2_000);
     } catch (err) {
       this.emit(
         'info',
@@ -778,7 +778,7 @@ export class Crawler extends EventEmitter {
             443,
             Math.max(2_000, this.config.requestTimeoutMs / 2),
           );
-          this.db.setHostCert({
+          await this.db.setHostCert({
             host,
             port: 443,
             validFrom: info.validFrom,
@@ -798,7 +798,7 @@ export class Crawler extends EventEmitter {
           probed++;
         } catch (err) {
           try {
-            this.db.setHostCert({
+            await this.db.setHostCert({
               host,
               port: 443,
               validFrom: null,
@@ -856,11 +856,11 @@ export class Crawler extends EventEmitter {
       // app launch doesn't offer to "resume" a crawl that already
       // finished successfully.
       try {
-        this.db.clearQueueCheckpoint();
+        await this.db.clearQueueCheckpoint();
       } catch {
         /* checkpoint table may not yet exist on very old DBs — ignore */
       }
-      this.emit('done', this.db.getSummary());
+      this.emit('done', await this.db.getSummary());
     }
       return;
     }
@@ -869,11 +869,11 @@ export class Crawler extends EventEmitter {
     // with the same first URL + same count look identical — good enough
     // heuristic; users who really want a fresh start can use Clear.
     const fingerprint = `list:${urls.length}:${urls[0] ?? ''}`;
-    const previousStart = this.db.getMeta('startUrl');
+    const previousStart = await this.db.getMeta('startUrl');
     if (previousStart !== fingerprint) {
-      this.db.reset();
+      await this.db.reset();
     }
-    this.db.setMeta('startUrl', fingerprint);
+    await this.db.setMeta('startUrl', fingerprint);
 
     // Force exact-url scope so anything fetched in fetchAndProcess never
     // re-enqueues its outlinks, and bake the first URL into startUrl so
@@ -912,29 +912,29 @@ export class Crawler extends EventEmitter {
     // both modes' post-crawl pipeline.
     if (this.config.analyseInlinks) {
       await yieldToEventLoop();
-      this.db.recomputeInlinks();
+      await this.db.recomputeInlinks();
     }
     if (this.config.analyseRedirectChains) {
       await yieldToEventLoop();
-      this.db.recomputeRedirectChains();
+      await this.db.recomputeRedirectChains();
     }
     if (this.config.analyseHreflang) {
       await yieldToEventLoop();
-      this.db.recomputeHreflangAnalysis();
+      await this.db.recomputeHreflangAnalysis();
       await yieldToEventLoop();
-      this.db.recomputeHreflangInconsistent();
+      await this.db.recomputeHreflangInconsistent();
     }
     if (this.config.analyseDuplicates) {
       await yieldToEventLoop();
-      this.runDuplicateClustering();
+      await this.runDuplicateClustering();
     }
     if (this.config.analysePagination) {
       await yieldToEventLoop();
-      this.db.recomputePaginationSequence();
+      await this.db.recomputePaginationSequence();
     }
     if (this.config.analyseIssues) {
       await yieldToEventLoop();
-      this.db.recomputeUrlsIssues(EXPENSIVE_ISSUE_DEFINITIONS);
+      await this.db.recomputeUrlsIssues(EXPENSIVE_ISSUE_DEFINITIONS);
     }
     await yieldToEventLoop();
     await this.runImageSizeProbes();
@@ -950,11 +950,11 @@ export class Crawler extends EventEmitter {
       // app launch doesn't offer to "resume" a crawl that already
       // finished successfully.
       try {
-        this.db.clearQueueCheckpoint();
+        await this.db.clearQueueCheckpoint();
       } catch {
         /* checkpoint table may not yet exist on very old DBs — ignore */
       }
-      this.emit('done', this.db.getSummary());
+      this.emit('done', await this.db.getSummary());
     }
   }
 
@@ -996,7 +996,7 @@ export class Crawler extends EventEmitter {
           maxDepth: 3,
         });
         if (this.stopped) return;
-        this.db.setSitemapUrls(result.entries);
+        await this.db.setSitemapUrls(result.entries);
         if (result.entries.length > 0) {
           this.emit(
             'info',
@@ -1014,15 +1014,15 @@ export class Crawler extends EventEmitter {
     }
   }
 
-  private hydrateFromDb(): void {
+  private async hydrateFromDb(): Promise<void> {
     // Mark every already-known URL as "seen" so enqueue can skip them.
-    for (const url of this.db.getAllUrls()) {
+    for (const url of await this.db.getAllUrls()) {
       this.seen.add(url);
     }
-    this.crawled = this.db.countCrawledUrls();
+    this.crawled = await this.db.countCrawledUrls();
 
     // If the start URL isn't in the DB yet, kick off a brand-new crawl from it.
-    if (!this.db.hasUrl(this.config.startUrl)) {
+    if (!(await this.db.hasUrl(this.config.startUrl))) {
       this.enqueue({ url: this.config.startUrl, depth: 0 });
     }
 
@@ -1033,7 +1033,7 @@ export class Crawler extends EventEmitter {
     // skipped, and the user would see "extra" URLs appear that the live
     // link-follow path would never have touched.
     const excludeNofollow = !this.config.followNofollow;
-    for (const pending of this.db.getPendingInternalLinks({ excludeNofollow })) {
+    for (const pending of await this.db.getPendingInternalLinks({ excludeNofollow })) {
       // Drop from `seen` so enqueue accepts it — these URLs are genuinely
       // unfinished work.
       this.seen.delete(pending.url);
@@ -1041,7 +1041,7 @@ export class Crawler extends EventEmitter {
     }
 
     // Re-queue any external URLs that were stubbed but never probed.
-    for (const extUrl of this.db.getUnprobedExternalUrls()) {
+    for (const extUrl of await this.db.getUnprobedExternalUrls()) {
       this.enqueueExternal(extUrl);
     }
   }
@@ -1100,14 +1100,14 @@ export class Crawler extends EventEmitter {
       } catch {
         /* ignore */
       }
-      this.db.updateExternalProbe(url, {
+      await this.db.updateExternalProbe(url, {
         statusCode: res.status,
         contentType: res.headers.get('content-type'),
         contentLength: parseIntSafe(res.headers.get('content-length')),
         responseTimeMs: Date.now() - t0,
       });
     } catch (err) {
-      this.db.updateExternalProbe(url, {
+      await this.db.updateExternalProbe(url, {
         statusCode: null,
         statusText: formatFetchError(err),
         responseTimeMs: Date.now() - t0,
@@ -1490,7 +1490,7 @@ export class Crawler extends EventEmitter {
             'warn',
             `Skipped ${item.url}: Content-Length ${declaredLen} > maxFileSizeBytes ${this.config.maxFileSizeBytes}`,
           );
-          this.db.upsertUrl({
+          await this.db.upsertUrl({
             url: item.url,
             contentKind: 'other',
             statusCode: res.status,
@@ -1638,7 +1638,7 @@ export class Crawler extends EventEmitter {
         const target = locationHeader
           ? normalizeUrl(locationHeader, item.url, this.urlRewrites)
           : null;
-        const redirectUrlId = this.db.upsertUrl({
+        const redirectUrlId = await this.db.upsertUrl({
           url: item.url,
           contentKind: kind,
           statusCode,
@@ -1669,7 +1669,7 @@ export class Crawler extends EventEmitter {
           keepAlive,
           serverHeader,
         });
-        if (redirectUrlId) this.db.setUrlHeaders(redirectUrlId, allHeaders);
+        if (redirectUrlId) await this.db.setUrlHeaders(redirectUrlId, allHeaders);
         this.crawled++;
         if (this.config.followRedirects && target) {
           // Hard cap on hop count — if the queued item already exceeds
@@ -1708,7 +1708,7 @@ export class Crawler extends EventEmitter {
             : statusCode >= 400
               ? 'non-indexable:client-error'
               : 'indexable';
-        const nonHtmlUrlId = this.db.upsertUrl({
+        const nonHtmlUrlId = await this.db.upsertUrl({
           url: item.url,
           contentKind: kind,
           statusCode,
@@ -1738,7 +1738,7 @@ export class Crawler extends EventEmitter {
           keepAlive,
           serverHeader,
         });
-        if (nonHtmlUrlId) this.db.setUrlHeaders(nonHtmlUrlId, allHeaders);
+        if (nonHtmlUrlId) await this.db.setUrlHeaders(nonHtmlUrlId, allHeaders);
         this.crawled++;
         return;
       }
@@ -2010,7 +2010,7 @@ export class Crawler extends EventEmitter {
         isSeed ? 'error' : 'warn',
         `Fetch failed [${elapsed}ms] ${item.url}: ${detail}`,
       );
-      this.db.upsertUrl({
+      await this.db.upsertUrl({
         url: item.url,
         contentKind: 'html',
         statusCode: null,
@@ -2263,10 +2263,11 @@ function isRetryableStatus(status: number): boolean {
 }
 
 function compilePatterns(
-  patterns: string[],
+  patterns: string[] | undefined | null,
   onInvalid: (pattern: string, error: string) => void,
 ): RegExp[] {
   const out: RegExp[] = [];
+  if (!patterns) return out;
   for (const raw of patterns) {
     const pattern = raw.trim();
     if (!pattern) continue;

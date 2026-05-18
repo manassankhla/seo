@@ -27,8 +27,29 @@ export async function POST(request: NextRequest) {
     const db = await getDb();
     console.log('>>> [API] DB CONNECTED SUCCESSFULLY');
 
-    const crawler = new Crawler(config, db as any, {
-      writeFetchedUrl: async (payload) => {
+    // Inject safe defaults so the engine never crashes on missing required fields
+    const crawlConfig = {
+      userAgent: 'Mozilla/5.0 (compatible; FreeCrawlBot/0.2.7; +https://freecrawl.dev)',
+      requestTimeoutMs: 15000,
+      maxUrls: 500,
+      maxDepth: 3,
+      maxConcurrency: 5,
+      maxRps: 2,
+      retryAttempts: 2,
+      retryInitialBackoffMs: 500,
+      followRedirects: true,
+      respectRobots: true,
+      discoverSitemaps: false,
+      storeNofollow: false,
+      crawlExternal: false,
+      includePatterns: [],
+      excludePatterns: [],
+      mode: 'spider' as const,
+      ...config,
+    };
+
+    const crawler = new Crawler(crawlConfig, db as any, {
+      writeFetchedUrl: async (payload: any) => {
         if (!payload) return { urlId: 0 };
         return db.writeFetchedUrl(payload);
       }
@@ -39,8 +60,19 @@ export async function POST(request: NextRequest) {
     }
     activeCrawler = crawler;
 
+    // Attach event listeners BEFORE start() to prevent unhandledRejection crashes
+    crawler.on('error', (msg: string) => {
+      console.error('>>> [CRAWLER] ERROR:', msg);
+    });
+    crawler.on('warn', (msg: string) => {
+      console.warn('>>> [CRAWLER] WARN:', msg);
+    });
+    crawler.on('info', (msg: string) => {
+      console.log('>>> [CRAWLER] INFO:', msg);
+    });
+
     console.log('>>> [API] STARTING CRAWLER ENGINE...');
-    crawler.start().catch(err => {
+    crawler.start().catch((err: unknown) => {
       console.error('>>> [API] CRAWLER RUNTIME ERROR:', err);
     });
 

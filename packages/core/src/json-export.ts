@@ -32,7 +32,7 @@ export async function exportUrlsToJson(
   const lead = options.pretty ? '\n' : '';
   const tail = options.pretty ? '\n' : '';
 
-  const source: Iterable<CrawlUrlRow> =
+  const source: AsyncIterable<CrawlUrlRow> =
     options.selectedIds && options.selectedIds.length > 0
       ? db.iterateUrlsByIds(options.selectedIds)
       : db.iterateAllUrls();
@@ -40,7 +40,7 @@ export async function exportUrlsToJson(
   const generator = async function* (): AsyncGenerator<string> {
     yield '[' + lead;
     let first = true;
-    for (const row of source) {
+    for await (const row of source) {
       const json = options.pretty
         ? JSON.stringify(row, null, 2).replace(/^/gm, indent).slice(indent.length)
         : JSON.stringify(row);

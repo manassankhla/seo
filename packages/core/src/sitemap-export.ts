@@ -99,7 +99,7 @@ async function writePart(
   changefreq: string,
   depthBased: boolean,
   gzip: boolean,
-  imagesFor: (urlId: number) => { src: string; alt: string | null }[],
+  imagesFor: (urlId: number) => Promise<{ src: string; alt: string | null }[]>,
 ): Promise<void> {
   const gen = async function* (): AsyncGenerator<string> {
     yield '<?xml version="1.0" encoding="UTF-8"?>\n';
@@ -112,7 +112,7 @@ async function writePart(
       yield `    <priority>${priorityForDepth(e.depth, depthBased)}</priority>\n`;
 
       if (variant === 'image') {
-        const imgs = imagesFor(e.id);
+        const imgs = await imagesFor(e.id);
         for (const img of imgs) {
           yield '    <image:image>\n';
           yield `      <image:loc>${escapeXml(img.src)}</image:loc>\n`;
@@ -223,7 +223,7 @@ export async function exportSitemap(
   // (sitemap-spec hard cap per file) so this is bounded. For sharded
   // outputs we still need the full set up front to compute part counts.
   const entries: UrlEntry[] = [];
-  for (const row of db.iterateIndexableUrls()) {
+  for await (const row of db.iterateIndexableUrls()) {
     entries.push({
       id: row.id,
       url: row.url,
@@ -239,8 +239,8 @@ export async function exportSitemap(
       ? filePath.replace(/\.xml\.gz$/i, '').replace(/\.gz$/i, '')
       : filePath.replace(/\.xml$/i, '');
 
-  const imagesFor = (urlId: number) =>
-    variant === 'image' ? db.imagesForUrl(urlId, 1000) : [];
+  const imagesFor = async (urlId: number) =>
+    variant === 'image' ? await db.imagesForUrl(urlId) : [];
 
   // Single-file path: total fits in one shard, no index needed.
   if (entries.length <= splitAt) {

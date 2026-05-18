@@ -187,16 +187,16 @@ export async function exportHtmlReport(
   filePath: string,
   options: HtmlReportOptions,
 ): Promise<{ filePath: string; bytesWritten: number }> {
-  const summary: CrawlSummary = db.getSummary();
-  const counts: OverviewCounts = db.getOverviewCounts();
+  const summary: CrawlSummary = await db.getSummary();
+  const counts: OverviewCounts = await db.getOverviewCounts() as any;
   const generatedAt = options.generatedAt ?? new Date();
 
   // Sample tables — three small SELECTs straight out of the URL table.
   // Capped at 25 rows each to keep the report scannable; the live UI is
   // the right place for the full data set.
-  const slowestRows = db.topUrlsBy('response_time_ms', 25);
-  const deepestRows = db.topUrlsBy('depth', 25);
-  const fanoutRows = db.topUrlsBy('outlinks', 25);
+  const slowestRows = await db.topUrlsBy('response_time_ms', 25);
+  const deepestRows = await db.topUrlsBy('depth', 25);
+  const fanoutRows = await db.topUrlsBy('outlinks', 25);
 
   function rowsTable(
     label: string,
